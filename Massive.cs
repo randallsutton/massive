@@ -37,6 +37,9 @@ namespace Massive {
                 } else if (item.GetType() == typeof(ExpandoObject)) {
                     var d = (IDictionary<string, object>)item;
                     p.Value = d.Values.FirstOrDefault();
+                } else if (item.GetType() == typeof(DateTime)) {
+                    p.DbType = DbType.DateTime2;
+                    p.Value = item;
                 } else {
                     p.Value = item;
                 }
