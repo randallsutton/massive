@@ -319,19 +319,19 @@ namespace Massive {
         }
 
         /// <summary>
-        /// Returns a dynamic PagedResult. Result properties are Items, TotalPages, and TotalRecords.
+        /// Returns a dynamic PagedResult. Result properties are Items, TotalRecords.
         /// </summary>
-        public virtual dynamic Paged(string where = "", string orderBy = "", string columns = "*", int pageSize = 20, int currentPage = 1, params object[] args)
+        public virtual dynamic Paged(string where = "", string orderBy = "", string columns = "*", int offset = 0, int limit = 20, params object[] args)
         {
-            return BuildPagedResult(where: where, orderBy: orderBy, columns: columns, pageSize: pageSize, currentPage: currentPage, args: args);
+            return BuildPagedResult(where: where, orderBy: orderBy, columns: columns, offset: offset, limit: limit, args: args);
         }
 
-        public virtual dynamic Paged(string sql, string primaryKey, string where = "", string orderBy = "", string columns = "*", int pageSize = 20, int currentPage = 1, params object[] args)
+        public virtual dynamic Paged(string sql, string primaryKey, string where = "", string orderBy = "", string columns = "*", int offset = 0, int limit = 20, params object[] args)
         {
-            return BuildPagedResult(sql, primaryKey, where, orderBy, columns, pageSize, currentPage, args);
+            return BuildPagedResult(sql, primaryKey, where, orderBy, columns, offset, limit, args);
         }
 
-        private dynamic BuildPagedResult(string sql = "", string primaryKeyField = "", string where = "", string orderBy = "", string columns = "*", int pageSize = 20, int currentPage = 1, params object[] args)
+        private dynamic BuildPagedResult(string sql = "", string primaryKeyField = "", string where = "", string orderBy = "", string columns = "*", int offset = 0, int limit = 1, params object[] args)
         {
             dynamic result = new ExpandoObject();
             var countSQL = "";
@@ -355,17 +355,13 @@ namespace Massive {
 
             var query = "";
             if (!string.IsNullOrEmpty(sql))
-                query = string.Format("SELECT {0} FROM (SELECT ROW_NUMBER() OVER (ORDER BY {2}) AS Row, {0} FROM ({3}) AS PagedTable {4}) AS Paged ", columns, pageSize, orderBy, sql, where);
+                query = string.Format("SELECT {0} FROM (SELECT ROW_NUMBER() OVER (ORDER BY {1}) AS Row, {0} FROM ({2}) AS PagedTable {3}) AS Paged ", columns, orderBy, sql, where);
             else
-                query = string.Format("SELECT {0} FROM (SELECT ROW_NUMBER() OVER (ORDER BY {2}) AS Row, {0} FROM {3} {4}) AS Paged ", columns, pageSize, orderBy, TableName, where);
+                query = string.Format("SELECT {0} FROM (SELECT ROW_NUMBER() OVER (ORDER BY {1}) AS Row, {0} FROM {2} {3}) AS Paged ", columns, orderBy, TableName, where);
 
-            var pageStart = (currentPage - 1) * pageSize;
-            query += string.Format(" WHERE Row > {0} AND Row <={1}", pageStart, (pageStart + pageSize));
+            query += string.Format(" WHERE Row > {0} AND Row <={1}", offset, (offset + limit));
             countSQL += where;
             result.TotalRecords = Scalar(countSQL, args);
-            result.TotalPages = result.TotalRecords / pageSize;
-            if (result.TotalRecords % pageSize > 0)
-                result.TotalPages += 1;
             result.Items = Query(string.Format(query, columns, TableName), args);
             return result;
         }
