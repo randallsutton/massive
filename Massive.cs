@@ -368,8 +368,8 @@ namespace Massive {
         /// <summary>
         /// Returns a single row from the database
         /// </summary>
-        public virtual dynamic Single(string where, params object[] args) {
-            var sql = string.Format("SELECT * FROM {0} WHERE {1}", TableName, where);
+        public virtual dynamic Single(string where, string columns = "*", params object[] args) {
+            var sql = string.Format("SELECT {0} FROM {1} WHERE {2}", columns, TableName, where);
             return Query(sql, args).FirstOrDefault();
         }
         /// <summary>
